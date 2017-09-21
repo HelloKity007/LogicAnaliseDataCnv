@@ -16,7 +16,7 @@ bAddDataIdx = True  # csv中的数据项是否增加下标
 def CnvRawData2Frame(Infile, OutFile):
     with open(Infile + '.csv', 'rt') as rf:
         reader = csv.reader(rf)
-        with open(OutFile + '.csv', 'at') as wf:
+        with open(OutFile + '.csv', 'at', newline='') as wf:
             writer = csv.writer(wf)
             oneFrame = []
             time_start = 0
@@ -72,7 +72,7 @@ def CombineCsvByTime(file1, file2, OutFile):
         with open(file2 + '.csv', 'rt') as rf2:
             reader2 = csv.reader(rf2)
             rowsFile2 = [row2 for row2 in reader2]
-            with open(OutFile + '.csv', 'at') as wf:
+            with open(OutFile + '.csv', 'at', newline='') as wf:
                 writer = csv.writer(wf)
                 idx_stTime = 0
                 idx_endTime = 1
