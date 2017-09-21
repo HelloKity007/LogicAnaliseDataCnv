@@ -9,6 +9,7 @@ import csv
 Infile1 = 'PC-VMC'  # csv file(省略后缀名)
 Infile2 = 'VMC-PC'  # csv file(省略后缀名)
 CombineFile = 'PCvVMC_Combine'
+bAddDataIdx = True  # csv中的数据项是否增加下标
 
 
 # 将逻辑分析仪原始的csv文件数据，按帧数据合并后输出文件(离上面要两个顶角空行)
@@ -21,6 +22,7 @@ def CnvRawData2Frame(Infile, OutFile):
             time_start = 0
             time_start_str = ''
             data_str = ''
+            dataIdx = 0
             for i, row in enumerate(reader):
                 if i > 0:
                     time = float(row[0].replace('s', ''))
@@ -30,12 +32,14 @@ def CnvRawData2Frame(Infile, OutFile):
                     title = ['T-Start[s]', 'T-End[s]', 'frame']
                     writer.writerow(title)  # 写入第1行标题
                 elif i == 1:
+                    dataIdx = 0
                     time_start = time
                     time_start_str = time_str
                     oneFrame.append(time_str)
-                    data_str += data
+                    data_str += data + '(' + 'Y' + str(dataIdx) + ')'
                 elif time - time_start < 0.0020:
-                    data_str += ' ' + data
+                    dataIdx += 1  # 下标递增1
+                    data_str += ' ' + data + '(' + 'Y' + str(dataIdx) + ')'
                     time_start = time
                     time_start_str = time_str
                 else:
@@ -46,10 +50,11 @@ def CnvRawData2Frame(Infile, OutFile):
                     data_str = ''  # 清空，准备开始新的一帧
 
                     # 记录新的一帧开始
+                    dataIdx = 0  # 下一帧，从新开始计算下标
                     time_start = time
                     time_start_str = time_str
                     oneFrame.append(time_str)
-                    data_str += data
+                    data_str += data + '(' + 'Y' + str(dataIdx) + ')'
 
             oneFrame.append(data_str)
             writer.writerow(oneFrame)  # 写入文件
@@ -88,12 +93,12 @@ def CombineCsvByTime(file1, file2, OutFile):
                     # 取出file1的一行
                     if len(rowsFile1) > 0 and row_file1 == []:
                         row_file1 = rowsFile1.pop()
-                        print(row_file1)
+                        # print(row_file1)
 
                     # 取出file2的一行
                     if len(rowsFile2) > 0 and len(row_file2) == 0:
                         row_file2 = rowsFile2.pop()
-                        print(row_file2)
+                        # print(row_file2)
 
                     if len(row_file1) == 0 and len(row_file2) == 0:
                         continue
