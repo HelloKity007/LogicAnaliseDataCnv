@@ -9,7 +9,15 @@ import csv
 Infile1 = 'PC-VMC'  # csv file(省略后缀名)
 Infile2 = 'VMC-PC'  # csv file(省略后缀名)
 CombineFile = 'PCvVMC_Combine'
-bAddDataIdx = True  # csv中的数据项是否增加下标
+
+
+# 输入时间，转换输出time list
+# 输入time： float, 单位s
+def GetListDeltaTime(time):
+    if(time > 1.0):
+        return ['delta', str(time) + 's']
+    else:
+        return ['delta', str(int(time * 1000)) + 'ms']
 
 
 # 将逻辑分析仪原始的csv文件数据，按帧数据合并后输出文件(离上面要两个顶角空行)
@@ -28,6 +36,7 @@ def CnvRawData2Frame(Infile, OutFile):
                     time = float(row[0].replace('s', ''))
                     time_str = row[0].replace('s', '')
                     data = row[1]
+
                 if i == 0:
                     title = ['T-Start[s]', 'T-End[s]', 'frame']
                     writer.writerow(title)  # 写入第1行标题
@@ -56,6 +65,7 @@ def CnvRawData2Frame(Infile, OutFile):
                     oneFrame.append(time_str)
                     data_str += data + '(' + 'Y' + str(dataIdx) + ')'
 
+            oneFrame.append(time_start_str)
             oneFrame.append(data_str)
             writer.writerow(oneFrame)  # 写入文件
 
@@ -89,6 +99,9 @@ def CombineCsvByTime(file1, file2, OutFile):
 
                 row_file1 = []
                 row_file2 = []
+                last_end_time = 0.0  # 记录上一写入帧数据的'T-End[s]'
+                delta = 0.0  # 记录时间两帧时间关
+                write_count = 0  # 记录循环写入文件次数
                 while len(rowsFile1) > 0 or len(rowsFile2) > 0:
                     # 取出file1的一行
                     if len(rowsFile1) > 0 and row_file1 == []:
@@ -103,28 +116,75 @@ def CombineCsvByTime(file1, file2, OutFile):
                     if len(row_file1) == 0 and len(row_file2) == 0:
                         continue
                     elif len(row_file1) == 0 and len(row_file2) != 0:
+                        # 计算与上一贴帧时间差
+                        delta = float(row_file2[idx_stTime]) - \
+                            last_end_time
+                        # 记录写入帧的'T-End[s]'
+                        last_end_time = float(row_file2[idx_endTime])
+                        # 写入时间差
+                        if write_count != 0:
+                            writer.writerow(GetListDeltaTime(delta))
+
                         row_file2.insert(
                             idx_direct, file2.replace('_temp', ''))
                         writer.writerow(row_file2)
                         row_file2 = []  # 清空buf，以便取出下一行
+
+                        # 写入次数递增
+                        write_count += 1
                     elif len(row_file1) != 0 and len(row_file2) == 0:
+                        # 计算与上一贴帧时间差
+                        delta = float(row_file1[idx_stTime]) - \
+                            last_end_time
+                        # 记录写入帧的'T-End[s]'
+                        last_end_time = float(row_file1[idx_endTime])
+                        # 写入时间差
+                        if write_count != 0:
+                            writer.writerow(GetListDeltaTime(delta))
+
                         row_file1.insert(
                             idx_direct, file1.replace('_temp', ''))
+
                         writer.writerow(row_file1)
                         row_file1 = []  # 清空buf，以便取出下一行
+
+                        # 写入次数递增
+                        write_count += 1
                     elif 1:
                         stTime1 = float(row_file1[idx_stTime])
                         stTime2 = float(row_file2[idx_stTime])
+
                         if stTime1 < stTime2:
+                            # 计算与上一贴帧时间差
+                            delta = float(row_file1[idx_stTime]) - \
+                                last_end_time
+                            # 记录写入帧的'T-End[s]'
+                            last_end_time = float(row_file1[idx_endTime])
+                            # 写入时间差
+                            if write_count != 0:
+                                writer.writerow(GetListDeltaTime(delta))
+
                             row_file1.insert(
                                 idx_direct, file1.replace('_temp', ''))
                             writer.writerow(row_file1)
                             row_file1 = []  # 清空buf，以便取出下一行
                         else:
+                            # 计算与上一贴帧时间差
+                            delta = float(row_file2[idx_stTime]) - \
+                                last_end_time
+                            # 记录写入帧的'T-End[s]'
+                            last_end_time = float(row_file2[idx_endTime])
+                            # 写入时间差
+                            if write_count != 0:
+                                writer.writerow(GetListDeltaTime(delta))
+
                             row_file2.insert(
                                 idx_direct, file2.replace('_temp', ''))
                             writer.writerow(row_file2)
                             row_file2 = []  # 清空buf，以便取出下一行
+
+                        # 写入次数递增
+                        write_count += 1
 
 
 # 主函数(离上面要两个顶角空行)
